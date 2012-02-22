@@ -47,12 +47,13 @@
 	- id  : SERIAL (primary_key)
 	- name : VARCHAR(128)
 	- position : POINT(2)
+	- status : BOOLEAN //possible statuses free=True, busy=False
 
 - Request
 	- id : SERIAL (primary key)
 	- id_passenger references Passenger(id)
 	- id_taxi references Taxi(id) // indexed column to make review queries more efficient
-	- status : VARCHAR(10) // possible statuses: open, accepted, rejected, cancelled, active, closed
+	- status : SHORTINT // possible statuses: open=0, accepted=1, rejected=2, cancelled=3, active=4, closed=5
 	- passenger_boarded : BOOLEAN DEFAULT NULL // Two boolean variables to maintain passenger and taxi views consistent
 	- passenger_picked : BOOLEAN DEFAULT NULL
 	- created_ts : TIMESTAMP
