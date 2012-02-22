@@ -1,0 +1,65 @@
+******************
+    TaxiRider
+******************
+
+- Simple geographical information system that help users locate nearby taxis and request them.
+- Toy project to learn the CakePHP framework
+
+*** Technologies used
+* CakePHP v1.3.7
+* PostgreSQL 9.1 + PostGIS
+* Google Maps API
+
+*** Use cases
+
+- Passenger view
+  	- Register passenger
+  	- Remove passenger
+  	- Change position
+	- Search for nearby taxis
+	- Request a taxi
+	- Cancel request
+	- Retrieve requests
+	- Retrieve taxi position
+	- Board taxi
+	- Leave taxi
+	- Write review
+	- Get Reviews
+
+- Taxi View
+    - Register taxi
+	- Remove taxi
+	- Change position
+	- Retrieve requests
+	- Accept request
+	- Reject request
+	- Pick up passenger
+    - Drop passenger
+	
+*** Relational Entities
+
+- Passenger
+	- id  : SERIAL (primary_key)
+	- name : VARCHAR(128)
+	- position : POINT(2)
+	
+- Taxi
+	- id  : SERIAL (primary_key)
+	- name : VARCHAR(128)
+	- position : POINT(2)
+
+- Request
+	- id : SERIAL (primary key)
+	- id_passenger references Passenger(id)
+	- id_taxi references Taxi(id) // indexed column to make review queries more efficient
+	- status : VARCHAR(10) // possible statuses: open, accepted, rejected, cancelled, active, closed
+	- passenger_boarded : BOOLEAN DEFAULT NULL // Two boolean variables to maintain passenger and taxi views consistent
+	- passenger_picked : BOOLEAN DEFAULT NULL
+	- created_ts : TIMESTAMP
+	- closed_ts : TIMESTAMP DEFAULT NULL
+	- review: TEXT DEFAULT NULL
+	- anonymous_review: BOOLEAN DEFAULT False
+	- start_position : POINT(2)
+	- end_position : POINT(2) DEFAULT NULL
+	- Trigger:
+		- When passenger_boarded=false && passenger_picked=false: set status to "closed" and set closed_ts
