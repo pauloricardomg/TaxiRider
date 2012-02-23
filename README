@@ -6,15 +6,20 @@
 - Toy project to learn the CakePHP framework
 
 *** Technologies used
+
 * CakePHP v1.3.7
 * PostgreSQL 9.1 + PostGIS
 * Google Maps API
 
 *** Use cases
 
-- Passenger view
+- Admin view
+    - Register taxi
+	- Remove taxi
   	- Register passenger
   	- Remove passenger
+
+- Passenger view
   	- Change position
 	- Search for nearby taxis
 	- Request a taxi
@@ -27,8 +32,6 @@
 	- Get Reviews
 
 - Taxi View
-    - Register taxi
-	- Remove taxi
 	- Change position
 	- Retrieve requests
 	- Accept request
@@ -37,6 +40,8 @@
     - Drop passenger
 	
 *** Relational Entities
+
+SQL schema files available at: config/schema/taxirider*.sql
 
 - Passenger
 	- id  : SERIAL (primary_key)
@@ -58,9 +63,9 @@
 	- passenger_picked : BOOLEAN DEFAULT NULL
 	- created_ts : TIMESTAMP
 	- closed_ts : TIMESTAMP DEFAULT NULL
-	- review: TEXT DEFAULT NULL
+	- review: TEXT DEFAULT NULL // For simplicity, keeping the review associated to a request (1-1), instead of a separate entity.
 	- anonymous_review: BOOLEAN DEFAULT False
 	- start_position : POINT(2)
 	- end_position : POINT(2) DEFAULT NULL
 	- Trigger:
-		- When passenger_boarded=false && passenger_picked=false: set status to "closed" and set closed_ts
+		- When passenger_boarded=false && passenger_picked=false: set status to "closed" and set closed_ts		
