@@ -4,19 +4,19 @@ DROP TABLE IF EXISTS taxis;
 
 CREATE TABLE passengers (
 	id SERIAL CONSTRAINT passengers_pkey PRIMARY KEY,
-	nome VARCHAR(32) NOT NULL );
+	name VARCHAR(32) NOT NULL );
 SELECT AddGeometryColumn( 'passengers', 'position', -1, 'POINT', 2 );
 
 CREATE TABLE taxis (
 	id SERIAL CONSTRAINT taxis_pkey PRIMARY KEY,
-	nome VARCHAR(64) NOT NULL,
+	name VARCHAR(64) NOT NULL,
 	status BOOL NOT NULL DEFAULT TRUE);
 SELECT AddGeometryColumn( 'taxis', 'position', -1, 'POINT', 2 );
 
 CREATE TABLE requests (
 		id SERIAL CONSTRAINT requests_pkey PRIMARY KEY,
-		id_passenger INTEGER references passengers(id),
-		id_taxi INTEGER references taxis(id),
+		passenger_id INTEGER references passengers(id),
+		taxi_id INTEGER references taxis(id),
 		status SMALLINT NOT NULL DEFAULT 0,
 		passenger_boarded BOOL DEFAULT NULL,
 		passenger_picked BOOL DEFAULT NULL,

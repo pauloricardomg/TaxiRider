@@ -3,7 +3,7 @@ class DATABASE_CONFIG {
 
 	var $default = array(
 		'driver' => 'postgres',
-		'persistent' => true,
+		'persistent' => false,
 		'host' => 'localhost',
 		'login' => 'taxirider',
 		'password' => 'taxirider',
