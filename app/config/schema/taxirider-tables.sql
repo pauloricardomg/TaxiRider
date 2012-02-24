@@ -2,16 +2,22 @@
 DROP TABLE IF EXISTS passengers;
 DROP TABLE IF EXISTS taxis;
 
+-- WGS84 (google maps projection) = 4326.
+
 CREATE TABLE passengers (
 	id SERIAL CONSTRAINT passengers_pkey PRIMARY KEY,
 	name VARCHAR(32) NOT NULL );
-SELECT AddGeometryColumn( 'passengers', 'position', -1, 'POINT', 2 );
+SELECT AddGeometryColumn( 'passengers', 'position', 4326, 'POINT', 2 );
+
+ALTER TABLE passengers OWNER TO taxirider;
 
 CREATE TABLE taxis (
 	id SERIAL CONSTRAINT taxis_pkey PRIMARY KEY,
 	name VARCHAR(64) NOT NULL,
 	status BOOL NOT NULL DEFAULT TRUE);
-SELECT AddGeometryColumn( 'taxis', 'position', -1, 'POINT', 2 );
+SELECT AddGeometryColumn( 'taxis', 'position', 4326, 'POINT', 2 );
+
+ALTER TABLE taxis OWNER TO taxirider;
 
 CREATE TABLE requests (
 		id SERIAL CONSTRAINT requests_pkey PRIMARY KEY,
@@ -25,9 +31,10 @@ CREATE TABLE requests (
 		closed TIMESTAMP DEFAULT NULL,
 		review TEXT DEFAULT NULL,
 		anonymous_review BOOL DEFAULT FALSE );
-SELECT AddGeometryColumn( 'requests', 'start_position', -1, 'POINT', 2 );
-SELECT AddGeometryColumn( 'requests', 'end_position', -1, 'POINT', 2 );
+SELECT AddGeometryColumn( 'requests', 'start_position', 4326, 'POINT', 2 );
+SELECT AddGeometryColumn( 'requests', 'end_position', 4326, 'POINT', 2 );
 
+ALTER TABLE taxis OWNER TO taxirider;
 
 DROP TRIGGER IF EXISTS request_update ON requests;
 
