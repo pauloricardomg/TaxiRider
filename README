@@ -13,13 +13,9 @@
 
 *** Use cases
 
-- Admin view
-	- Register taxi
-	- Remove taxi
+- Passenger view
   	- Register passenger
   	- Remove passenger
-
-- Passenger view
   	- Change position
 	- Search for nearby taxis
 	- Request a taxi
@@ -32,6 +28,8 @@
 	- Get Reviews
 
 - Taxi View
+	- Register taxi
+	- Remove taxi
 	- Change position
 	- Retrieve requests
 	- Accept request
