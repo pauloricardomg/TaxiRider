@@ -93,6 +93,7 @@ class GoogleMapV3Helper extends Helper {
 	var $defaultMarkerIcon='http://google-maps-icons.googlecode.com/files/home.png'; //Default icon of the marker
 	var $defaultInfoWindow=true;				//Boolean to show an information window when you click the marker or not
 	var $defaultWindowText='My Position';		//Default text inside the information window
+	var $defaultMarkerListener=null;
 		
 	//DEFAULT MARKER OPTIONS (function addMarker())
 	var $defaultInfoWindowM=true;		//Boolean to show an information window when you click the marker or not
@@ -124,7 +125,7 @@ class GoogleMapV3Helper extends Helper {
 		if(!isset($marker)) 	$marker=$this->defaultMarker;		
 		if(!isset($markerIcon)) $markerIcon=$this->defaultMarkerIcon;	
 		if(!isset($infoWindow)) $infoWindow=$this->defaultInfoWindow;	
-		if(!isset($windowText)) $windowText=$this->defaultWindowText;	
+		if(!isset($windowText)) $windowText=$this->defaultWindowText;
 		
 		echo '<script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=true"></script>';
 		echo '<script type="text/javascript" src="http://code.google.com/apis/gears/gears_init.js"></script>';
@@ -184,7 +185,7 @@ class GoogleMapV3Helper extends Helper {
 		        map.setCenter(initialLocation);
 		        map.setZoom(3);
 		    }";
-
+		            
 		    $map .= "
 			function setMarker(position){
 		        var contentString = '".$windowText."';
@@ -198,7 +199,8 @@ class GoogleMapV3Helper extends Helper {
 		            icon: image,
 		            title:\"My Position\"
 		        });";
-		     if($infoWindow){   
+		    
+		    if($infoWindow){   
 		     	$map .= "google.maps.event.addListener(marker, 'click', function() {
 								infowindow.open(map,marker);
 		        			});";
@@ -245,7 +247,10 @@ class GoogleMapV3Helper extends Helper {
 	        var infowindow".$id." = new google.maps.InfoWindow({
 	            content: contentString
 	        });";
-		if($infoWindow){   
+		
+		if(isset($markerListener)){
+			$marker .= "google.maps.event.addListener(marker".$id.", 'click', ".$markerListener.");";
+		} else if($infoWindow){   
 		     	$marker .= "google.maps.event.addListener(marker".$id.", 'click', function() {
 								infowindow".$id.".open(map,marker".$id.");
 		        			});";
