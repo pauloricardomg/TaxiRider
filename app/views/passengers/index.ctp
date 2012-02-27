@@ -14,7 +14,7 @@
   				<ul>
   					<li>Actions:</li>
   						<ul>
-    					<li>Add passenger</li>
+    					<li><a href="#" onclick="addPassenger()">Add passenger</a></li>
     					<li><a href="#" onclick="deletePassenger()">Remove passenger</a></li>
     					<li>Change position</li>
     					<li>Search nearby taxis</li>
@@ -28,7 +28,8 @@
                 							'type'=>'HYBRID',                 //Type of map (ROADMAP, SATELLITE, HYBRID or TERRAIN) 
                 							'latitude'=>-34.608417,    //Default latitude if the browser doesn't support localization or you don't want localization
                 							'longitude'=>-58.373161,    //Default longitude if the browser doesn't support localization or you don't want localization
-                							'localize'=>false,                //Boolean to localize your position or not 
+                							'localize'=>false,                //Boolean to localize your position or not
+                							'mapListener' => getAddJSListener($this), 
             	));?>
     		</td>
   			</tr>
@@ -40,6 +41,8 @@
 <script>
 	//delete flag
 	var toDelete = false;
+	//add flag
+	var toAdd = false;
 
 	/* Enables delete-mode.
 	*  Called when the user clicks "Remove Passenger" button. 
@@ -47,6 +50,14 @@
 	function deletePassenger(){
 		toDelete = true;
 		document.getElementById('status_bar').innerHTML ='Select passenger:';
+	}
+
+	/* Enables add-mode.
+	*  Called when the user clicks "Add Passenger" button. 
+	*/
+	function addPassenger(){
+		toAdd = true;
+		document.getElementById('status_bar').innerHTML ='Select new passenger position:';
 	}
 </script>
 
@@ -63,7 +74,7 @@
  * @param unknown_type $obj the document object
  * @param unknown_type $passengerName the name of the passenger being deleted (for confirmation)
  * @param unknown_type $passengerId the ide of the passenger in the DB
- * @return string the javascript listener for th
+ * @return string the javascript listener for the action
  */
 function getDeleteJSListener($obj, $passengerName, $passengerId){
 	return "function(event) {
@@ -82,18 +93,49 @@ function getDeleteJSListener($obj, $passengerName, $passengerId){
 		}";
 }
 
+/**
+* Gets a google map listener that will submit the
+* add request to the server upon click on the map
+*
+* @param unknown_type $obj the document object
+* @return string the javascript listener for the action
+*/
+function getAddJSListener($obj){
+	return "function(event) {
+	 		if(toAdd){
+	 			var passengerName = ".$obj->Js->prompt('Passenger name?', '').";
+	 			if (passengerName != null){
+	 						document.getElementById('PassengerName').value = passengerName;
+	 			 			document.getElementById('PassengerLat').value = event.latLng.lat();
+	 			 			document.getElementById('PassengerLng').value = event.latLng.lng();
+	 			 			//document.getElementById('status_bar').innerHTML = 'name: ' + passengerName + '. lat: ' + event.latLng.lat() + '. lon: ' + event.latLng.lng();
+	 			 			document.forms['PassengerAddForm'].submit();
+	 			} else {
+	 				document.getElementById('status_bar').innerHTML ='&nbsp';
+	 				toAdd = false;
+	 			}
+	 		}
+		}";
+}
+
 // Forms
 
 //Adds a form for the delete operation
-echo $this->Form->create('Passenger', array('action' => 'delete', 'inputDefaults' => array( 'label' => false, 'div' => false)));
-echo $this->Form->input('id');
-$this->Form->end();
+echo $this->Form->create('Passenger', array('action' => 'delete', 'type' => 'delete', 'inputDefaults' => array( 'label' => false, 'div' => false)));
+echo $this->Form->hidden('id');
+echo $this->Form->end();
 
+//Adds a form for the add operation
+echo $this->Form->create('Passenger', array('action' => 'add', 'inputDefaults' => array( 'label' => false, 'div' => false)));
+echo $this->Form->hidden('name');
+echo $this->Form->hidden('lat');
+echo $this->Form->hidden('lng');
+echo $this->Form->end();
 
 //Add a google maps markert for each passenger in the DB
 
 foreach ($passengers as $passenger):
-	list ($lat, $lng) = explode(",", $passenger['Passenger']['text_pos']);
+	list ($lat, $lng) = explode(",", $passenger['Passenger']['csv_latlng']);
 	$passengerId = $passenger['Passenger']['id'];
 	$passengerName = $passenger['Passenger']['name'];
 	echo $googleMapV3->addMarker(array(

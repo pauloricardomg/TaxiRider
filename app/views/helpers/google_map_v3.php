@@ -142,6 +142,11 @@ class GoogleMapV3Helper extends Helper {
 		    };
 		    map = new google.maps.Map(document.getElementById(\"map_canvas\"), myOptions);
 		";
+		
+		if(isset($mapListener)){
+			$map .= "google.maps.event.addListener(map, 'click', ".$mapListener.");";	
+		}
+		
 		if($localize) $map .= "localize();"; else $map .= "map.setCenter(noLocation);";
 		$map .= "
 			function localize(){
