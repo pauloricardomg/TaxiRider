@@ -2,14 +2,14 @@
 
 class PassengersController extends AppController {
 	
-	var $helpers = array ('Html','Form', 'GoogleMapV3');
+	var $helpers = array ('Html','Form', 'GoogleMapV3', 'Js');
 	//var $uses = array('Passenger', 'Request');
 	var $name = 'Passengers';
 	
-	//var $components = array('Session');
+	var $components = array('Session');
 	
 	function index() {
-		$passengers = $this->Passenger->find('all', array("fields" => array("name", "text_pos")));
+		$passengers = $this->Passenger->find('all', array("fields" => array("id", "name", "text_pos")));
 		
 		//Convert PostGis POINT(lat lng) format to csv "lat, lng" string.
 		foreach ($passengers as &$passenger):
@@ -19,6 +19,14 @@ class PassengersController extends AppController {
 		endforeach;
 		
 		$this->set('passengers', $passengers);
+	}
+	
+	function delete() {
+		$userToDelete = $this->data['Passenger']['id'];
+		if ($this->Passenger->delete($userToDelete)) {
+			$this->Session->setFlash('Passenger has been deleted.');
+			$this->redirect(array('action' => 'index'));
+		}
 	}
 	
 // 	function add() {
