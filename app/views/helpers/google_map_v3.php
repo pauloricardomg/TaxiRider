@@ -141,7 +141,11 @@ class GoogleMapV3Helper extends Helper {
 		      mapTypeId: google.maps.MapTypeId.".$type."
 		    };
 		    map = new google.maps.Map(document.getElementById(\"map_canvas\"), myOptions);
+		    //To store eventual added markers
+		    markers = [];
 		";
+		
+		
 		
 		if(isset($mapListener)){
 			$map .= "google.maps.event.addListener(map, 'click', ".$mapListener.");";	
@@ -247,19 +251,28 @@ class GoogleMapV3Helper extends Helper {
 			        if(isset($shadowIcon)) $marker .= "shadow: shadowImage,";
 		$marker .= "
 			});";
-		$marker .= "
-			var contentString = '".$windowText."';
+		$marker .= "markers.push(marker".$id.");";
+		$marker .= "var contentString = '".$windowText."';
 	        var infowindow".$id." = new google.maps.InfoWindow({
 	            content: contentString
 	        });";
 		
-		if(isset($markerListener)){
-			$marker .= "google.maps.event.addListener(marker".$id.", 'click', ".$markerListener.");";
+		if(isset($markerClickListener)){
+			$marker .= "google.maps.event.addListener(marker".$id.", 'click', ".$markerClickListener.");";
 		} else if($infoWindow){   
 		     	$marker .= "google.maps.event.addListener(marker".$id.", 'click', function() {
 								infowindow".$id.".open(map,marker".$id.");
 		        			});";
 	    }
+	    
+	    if(isset($markerDragstartListener)){
+	    	$marker .= "google.maps.event.addListener(marker".$id.", 'dragstart', ".$markerDragstartListener.");";
+	    }
+	    
+	    if(isset($markerDragendListener)){
+	    	$marker .= "google.maps.event.addListener(marker".$id.", 'dragend', ".$markerDragendListener.");";
+	    }
+	    
 		$marker .= "</script>";
 		return $marker;
 	}
