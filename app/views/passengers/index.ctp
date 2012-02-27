@@ -16,7 +16,7 @@
   						<ul>
     					<li><a href="#" onclick="addPassenger()">Add passenger</a></li>
     					<li><a href="#" onclick="deletePassenger()">Remove passenger</a></li>
-    					<li>Change position</li>
+    					<li><a href="#" onclick="changePosition()">Change position</a></li>
     					<li>Search nearby taxis</li>
     					</ul>
     			</ul>
@@ -43,6 +43,8 @@
 	var toDelete = false;
 	//add flag
 	var toAdd = false;
+	//change position flag
+	var changePos = false;
 
 	/* Enables delete-mode.
 	*  Called when the user clicks "Remove Passenger" button. 
@@ -58,6 +60,20 @@
 	function addPassenger(){
 		toAdd = true;
 		document.getElementById('status_bar').innerHTML ='Select new passenger position:';
+	}
+
+	/* Enables change-position mode.
+	*  Called when the user clicks "Change Position" button. 
+	*/
+	function changePosition(){
+		document.getElementById('status_bar').innerHTML ='Drag and drop passenger to new position: ';
+
+		//Enable dragging markers
+		for(var i=0; i<markers.length; i++) {
+			var value = markers[i];
+			value.setDraggable(true);
+		}
+		
 	}
 </script>
 
@@ -81,8 +97,9 @@ function getDeleteJSListener($obj, $passengerName, $passengerId){
 	 		if(toDelete){
 	 			var confirmDel = ".$obj->Js->confirm('Delete passenger '.$passengerName.'?').";
 	 			if (confirmDel){
-	 						document.getElementById('PassengerId').value = ".$passengerId.";
-	 			 			document.forms['PassengerDeleteForm'].submit();
+	 						var delForm = document.forms['PassengerDeleteForm'];
+	 						delForm.elements['PassengerId'].value = ".$passengerId.";
+	 			 			delForm.submit();
 	 			} else{
 	 				document.getElementById('status_bar').innerHTML ='&nbsp';
 	 				toDelete = false;
@@ -105,16 +122,62 @@ function getAddJSListener($obj){
 	 		if(toAdd){
 	 			var passengerName = ".$obj->Js->prompt('Passenger name?', '').";
 	 			if (passengerName != null){
-	 						document.getElementById('PassengerName').value = passengerName;
-	 			 			document.getElementById('PassengerLat').value = event.latLng.lat();
-	 			 			document.getElementById('PassengerLng').value = event.latLng.lng();
-	 			 			//document.getElementById('status_bar').innerHTML = 'name: ' + passengerName + '. lat: ' + event.latLng.lat() + '. lon: ' + event.latLng.lng();
-	 			 			document.forms['PassengerAddForm'].submit();
+	 						var addForm = document.forms['PassengerAddForm'];
+	 						addForm.elements['PassengerName'].value = passengerName;
+	 			 			addForm.elements['PassengerLatlng'].value = event.latLng.toString();
+	 			 			//document.getElementById('status_bar').innerHTML = 'name: ' + passengerName + '. lat: ' + event.latLng.lat() + '. lon: ' + event.latLng.lng(); //debug
+	 			 			addForm.submit();
 	 			} else {
 	 				document.getElementById('status_bar').innerHTML ='&nbsp';
 	 				toAdd = false;
 	 			}
 	 		}
+		}";
+}
+
+/**
+* Gets a google map marker listener that will record the
+* initial position of the marker before being moved
+*
+* @param unknown_type $obj the document object
+* @return string the javascript listener for the action
+*/
+function getChangePosStartJSListener($obj){
+	return "function(event) {
+					initialLatLng = event.latLng;
+		}";
+}
+
+/**
+ * Gets a google map marker listener that will change
+ * the position of a passenger, or roll back to the
+ * previous position if the user cancels the operation
+ *
+ * @param unknown_type $obj the document object
+ * @param unknown_type $passengerName
+ * @param unknown_type $passengerId
+ * 
+ * @return string the javascript listener for the action
+ */
+function getChangePosEndJSListener($obj, $passengerName, $passengerId){
+	return "function(event) {
+		 			var confirmChangePos = ".$obj->Js->confirm('Change position of '.$passengerName.'?').";
+	 				if (confirmChangePos){
+	 						var changePosForm = document.forms['PassengerChangePositionForm'];
+	 						changePosForm.elements['PassengerId'].value = ".$passengerId.";
+	 			 			changePosForm.elements['PassengerLatlng'].value = event.latLng.toString();
+	 			 			changePosForm.submit();	 				
+					} else{
+	 					document.getElementById('status_bar').innerHTML ='&nbsp';
+						//Return initial position
+						marker".$passengerId.".setPosition(initialLatLng);
+												
+						//Disable dragging markers
+						for(var i=0; i<markers.length; i++) {
+							var value = markers[i];
+							value.setDraggable(false);
+						}
+	 				}
 		}";
 }
 
@@ -128,8 +191,13 @@ echo $this->Form->end();
 //Adds a form for the add operation
 echo $this->Form->create('Passenger', array('action' => 'add', 'inputDefaults' => array( 'label' => false, 'div' => false)));
 echo $this->Form->hidden('name');
-echo $this->Form->hidden('lat');
-echo $this->Form->hidden('lng');
+echo $this->Form->hidden('latlng');
+echo $this->Form->end();
+
+//Adds a form for the change position operation
+echo $this->Form->create('Passenger', array('action' => 'changePosition', 'inputDefaults' => array( 'label' => false, 'div' => false)));
+echo $this->Form->hidden('id');
+echo $this->Form->hidden('latlng');
 echo $this->Form->end();
 
 //Add a google maps markert for each passenger in the DB
@@ -143,10 +211,11 @@ foreach ($passengers as $passenger):
             'latitude'=>$lat,        //Latitude of the marker 
             'longitude'=>$lng,        //Longitude of the marker 
             'markerIcon'=>'http://mapicons.nicolasmollet.com/wp-content/uploads/mapicons/shape-default/color-ffc11f/shapecolor-color/shadow-1/border-dark/symbolstyle-white/symbolshadowstyle-dark/gradient-no/male-2.png', //Custom icon 
-            'shadowIcon'=>'http://mapicons.nicolasmollet.com/wp-content/uploads/mapicons/shape-default/color-ffc11f/shapecolor-color/shadow-1/border-dark/symbolstyle-white/symbolshadowstyle-dark/gradient-no/male-2.png', //Custom shadow 
             'infoWindow'=>true,                    //Boolean to show an information window when you click the marker or not
             'windowText'=>'Name: ' . $passenger['Passenger']['name'],                //Default text inside the information window 
- 			'markerListener' => getDeleteJSListener($this, $passengerName, $passengerId)));
+ 			'markerClickListener' => getDeleteJSListener($this, $passengerName, $passengerId),
+ 			'markerDragstartListener' => getChangePosStartJSListener($this),
+ 			'markerDragendListener' => getChangePosEndJSListener($this, $passengerName, $passengerId)));
 endforeach; 
 ?>
 

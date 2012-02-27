@@ -23,7 +23,13 @@ class Passenger extends AppModel {
 	* @param string $postgisPoint original point returned by postGis
 	* @return string the parsed point
 	*/
-	function convertToPostGisPoint($lat, $lng){
+	function convertToPostGisPoint($latlng){
+		//Remove leading parentheses
+		$latlng = str_replace(array('(',')'), '', $latlng);
+		
+		//Explode and trim latitude and longitude
+		list ($lat, $lng) = array_map('trim',explode(",",$latlng));
+		
 		$expr = "ST_GeomFromText('POINT(".$lat." ".$lng.")', 4326)";
 		$db = $this->getDataSource();
 		return $db->expression($expr);

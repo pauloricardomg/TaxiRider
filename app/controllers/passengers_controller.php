@@ -23,35 +23,68 @@ class PassengersController extends AppController {
 	}
 	
 	function delete() {
-		$userToDelete = $this->data['Passenger']['id'];
-		if ($this->Passenger->delete($userToDelete)) {
-			$this->Session->setFlash('Passenger has been deleted.');
-			$this->redirect(array('action' => 'index'));
+		$flashMsg = null;
+		if(!empty($this->data)){
+			$userToDelete = $this->data['Passenger']['id'];
+			if ($this->Passenger->delete($userToDelete)) {
+				$flashMsg = 'Passenger has been deleted.';
+			}	
+		} else{
+			$flashMsg = 'Failed delete passenger: empty data provided';
 		}
+		
+		//No view - redirect to index view
+		$this->Session->setFlash($flashMsg);
+		$this->redirect(array('action' => 'index'));
+	}
+	
+	function changePosition() {
+		$flashMsg = null;
+		if (!empty($this->data)) {
+			$this->Passenger->id = $this->data['Passenger']['id'];
+			//Retrieve selected latitude and longitude from view
+			$latlng = $this->data['Passenger']['latlng'];
+			unset($this->data['Passenger']['latlng']);
+
+			//Convert to geospatial representation
+			$postGisPoint = $this->Passenger->convertToPostGisPoint($latlng);
+			$this->data['Passenger']['position'] = $postGisPoint;
+			if ($this->Passenger->save($this->data, array('id', 'position'))) {
+				$flashMsg = 'Passenger position changed.';
+			}
+		}  else{
+			$flashMsg = 'Failed change passenger position: empty data provided';
+		}
+		
+		//No view - redirect to index view
+		$this->Session->setFlash($flashMsg);
+		$this->redirect(array('action' => 'index'));
 	}
 	
 	function add() {
+		$flashMsg = null;
 		if (!empty($this->data)) {
 			//Retrieve selected latitude and longitude from view
-			$lat = $this->data['Passenger']['lat'];
-			$lng = $this->data['Passenger']['lng'];
-			unset($this->data['Passenger']['lat']);
-			unset($this->data['Passenger']['lng']);
+			$latlng = $this->data['Passenger']['latlng'];
+			unset($this->data['Passenger']['latlng']);
 			
 			//Convert to geospatial representation
-			$postGisPoint = $this->Passenger->convertToPostGisPoint($lat, $lng);
+			$postGisPoint = $this->Passenger->convertToPostGisPoint($latlng);
 			$this->data['Passenger']['position'] = $postGisPoint;
 
 			//Add passenger
 			if ($this->Passenger->save($this->data, array('id', 'name', 'position'))) {
-				$this->Session->setFlash('Passenger successfully added.');
-				$this->redirect(array('action' => 'index'));
+				$flashMsg = 'Passenger successfully added.';
 			}
 		} else{
-			$this->Session->setFlash('Failed.');
-			$this->redirect(array('action' => 'index'));
+			$flashMsg = 'Failed add passenger: empty data provided';
 		}
+		
+		//No view - redirect to index view
+		$this->Session->setFlash($flashMsg);
+		$this->redirect(array('action' => 'index'));
 	}
+		
 }
 
 ?>
