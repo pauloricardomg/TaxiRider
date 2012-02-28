@@ -5,7 +5,7 @@ class TaxiRiderHelper extends Helper {
 	/**
 	 *
 	 * Gets a google map marker click listener that will submit the
-	 * delete request to the server upon click on the marker
+	 * taxi delete request to the server upon click on the marker
 	 *
 	 * Constraints:
 	 * 
@@ -25,7 +25,7 @@ class TaxiRiderHelper extends Helper {
 	 * 						be associated
 	 * @return the javascript listener for the action
 	 */
-	function getDeleteJSListener($obj, $confirmMsg, $modelName, $markerId){
+	function getTaxiClickJSListener($obj, $confirmMsg, $modelName, $markerId){
 		$delForm = $modelName."DeleteForm";
 		$idElement = $modelName."Id";
 		return "function(event) {
@@ -44,8 +44,7 @@ class TaxiRiderHelper extends Helper {
 		 		}
 			}";
 	}
-
-
+	
 	/**
 	 * Gets a google map click listener that will submit the
 	 * add request to the server upon click on the map
@@ -109,13 +108,16 @@ class TaxiRiderHelper extends Helper {
 	 *
 	 * @return string the javascript listener for the action
 	 */
-	function getChangePosEndJSListener($obj, $confirmMsg, $markerId){
+	function getChangePosEndJSListener($obj, $confirmMsg, $modelName, $markerId){
+		$changePos = $modelName."ChangePositionForm";
+		$idElement = $modelName."Id";
+		$latLngElement = $modelName."Latlng";
 		return "function(event) {
 			 			var confirmChangePos = ".$obj->Js->confirm($confirmMsg).";
 		 				if (confirmChangePos){
-		 						var changePosForm = document.forms['PassengerChangePositionForm'];
-		 						changePosForm.elements['PassengerId'].value = ".$markerId.";
-		 			 			changePosForm.elements['PassengerLatlng'].value = event.latLng.toString();
+		 						var changePosForm = document.forms['".$changePos."'];
+		 						changePosForm.elements['".$idElement."'].value = ".$markerId.";
+		 			 			changePosForm.elements['".$latLngElement."'].value = event.latLng.toString();
 		 			 			changePosForm.submit();	 				
 						} else{
 		 					document.getElementById('status_bar').innerHTML ='&nbsp';

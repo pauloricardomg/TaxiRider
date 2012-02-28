@@ -17,7 +17,7 @@
     					<li><a href="#" onclick="addPassenger()">Add passenger</a></li>
     					<li><a href="#" onclick="deletePassenger()">Remove passenger</a></li>
     					<li><a href="#" onclick="changePosition()">Change position</a></li>
-    					<li>Search nearby taxis</li>
+    					<li><a href="#" onclick="nearbyTaxis()">Search nearby taxis</a></li>
     					</ul>
     			</ul>
     		</td>
@@ -29,7 +29,7 @@
                 							'latitude'=>-34.608417,    //Default latitude if the browser doesn't support localization or you don't want localization
                 							'longitude'=>-58.373161,    //Default longitude if the browser doesn't support localization or you don't want localization
                 							'localize'=>false,                //Boolean to localize your position or not
-                							'mapListener' => $taxiRider->getAddJSListener($this, 'Passenger name?', 'Passenger')
+                							'mapListener' => getPassengerMapClickJSListener($this, 'Passenger')
             	));?>
     		</td>
   			</tr>
@@ -39,33 +39,46 @@
 <!-- JavaScript -->
 
 <script>
-	//delete flag
-	var toDelete = false;
-	//add flag
-	var toAdd = false;
-	//change position flag
-	var changePos = false;
+	//Possible actions
+	PassengerActions = {
+		NONE : 0,
+	    ADD : 1,
+	    DELETE : 2,
+	    MOVE : 3,
+	    NEARBY_TAXIS : 4,
+	}
+
+	var currentAction = PassengerActions.NONE;
 
 	/* Enables delete-mode.
 	*  Called when the user clicks "Remove Passenger" button. 
 	*/
 	function deletePassenger(){
-		toDelete = true;
-		document.getElementById('status_bar').innerHTML ='Select passenger:';
+		currentAction = PassengerActions.DELETE;
+		document.getElementById('status_bar').innerHTML ='Select passenger: ';
 	}
 
 	/* Enables add-mode.
 	*  Called when the user clicks "Add Passenger" button. 
 	*/
 	function addPassenger(){
-		toAdd = true;
+		currentAction = PassengerActions.ADD;
 		document.getElementById('status_bar').innerHTML ='Select new passenger position:';
+	}
+
+	/* Enables add-mode.
+	*  Called when the user clicks "Add Passenger" button. 
+	*/
+	function nearbyTaxis(){
+		currentAction = PassengerActions.NEARBY_TAXIS;
+		document.getElementById('status_bar').innerHTML ='Search passenger to search taxis nearby:';
 	}
 
 	/* Enables change-position mode.
 	*  Called when the user clicks "Change Position" button. 
 	*/
 	function changePosition(){
+		currentAction = PassengerActions.MOVE;
 		document.getElementById('status_bar').innerHTML ='Drag and drop passenger to new position: ';
 
 		//Enable dragging markers
@@ -73,13 +86,108 @@
 			var value = markers[i];
 			value.setDraggable(true);
 		}
-		
 	}
 </script>
 
 <!-- PHP -->
 
 <?php
+
+// Helper functions
+
+/**
+*
+* Gets a google map marker click listener that will either delete the
+* selected passenger or search the nearby taxis, according to the active action
+*
+* Constraints:
+*
+* - This listener needs an external "currentAction" variable, which
+* is an enumeration (PassengerActions) that indicates what is the active
+* action currently.
+*
+* - Requires JS helper being specified in the controller
+*
+* - Assumes marker id is the id of the object to be removed in the DB
+*
+* @param unknown_type $obj the document object
+* @param string $confirmMsg the delete confirmation message to be shown on a popup
+* @param unknown_type $modelName the name of the model being deleted
+* @param string $markerId the identifier of the marker to which this listener will
+* 						be associated
+* @return the javascript listener for the action
+*/
+function getPassengerClickJSListener($obj, $passengerName, $modelName, $markerId){
+	$delForm = $modelName."DeleteForm";
+	$nearbyTaxis = $modelName."NearbyTaxisForm";
+	$idElement = $modelName."Id";
+	$distanceElement = $modelName."Distance";
+	return "function(event) {
+				switch(currentAction){
+					case PassengerActions.DELETE:
+				 		var confirmDel = ".$obj->Js->confirm("Delete ".$passengerName."?").";
+				 		if (confirmDel){
+				 					var delForm = document.forms['".$delForm."'];
+				 					delForm.elements['".$idElement."'].value = ".$markerId.";
+				 		 			delForm.submit();
+				 		} else{
+				 			document.getElementById('status_bar').innerHTML ='&nbsp';
+				 			currentAction = PassengerActions.NONE;
+				 		}
+						break;
+					case PassengerActions.NEARBY_TAXIS:
+				 		var confirmReq = ".$obj->Js->confirm("Search taxis nearby ".$passengerName."?").";
+				 		if (confirmReq){
+				 					var nearbyForm = document.forms['".$nearbyTaxis."'];
+				 					nearbyForm.elements['".$idElement."'].value = ".$markerId.";
+				 					var distance = ".$obj->Js->prompt("Search taxis within which distance? (m)", '').";
+				 					nearbyForm.elements['".$distanceElement."'].value = distance;
+				 		 			nearbyForm.submit();
+				 		} else{
+				 			document.getElementById('status_bar').innerHTML ='&nbsp';
+				 			currentAction = PassengerActions.NONE;
+				 		}
+						break;
+					default:
+  						infowindow".$markerId.".open(map,marker".$markerId.");
+				}
+			}";
+}
+
+
+/**
+* Gets a google map click listener that will submit the
+* add request to the server upon click on the map
+*
+* - Requires JS helper being specified in the controller ($obj)
+*
+* @param unknown_type $obj the document object
+*  @param unknown_type $condition condition in which the routine is executed
+* @param unknown_type $confirmMsg a message requesting the name of the entity to add
+* @param unknown_type $modelName the name of the model being added
+* @return string the javascript listener for the add action
+*/
+function getPassengerMapClickJSListener($obj, $modelName){
+	$addForm = $modelName."AddForm";
+	$nameElement = $modelName."Name";
+	$latLngElement = $modelName."Latlng";
+
+	return "function(event) {
+		 		if(currentAction = PassengerActions.ADD){
+		 			var passengerName = ".$obj->Js->prompt('Passenger name?', '').";
+		 			if (passengerName != null){
+		 						var addForm = document.forms['".$addForm."'];
+		 						addForm.elements['".$nameElement."'].value = passengerName;
+		 			 			addForm.elements['".$latLngElement."'].value = event.latLng.toString();
+		 			 			//document.getElementById('status_bar').innerHTML = 'name: ' + passengerName + '. lat: ' + event.latLng.lat() + '. lon: ' + event.latLng.lng(); //debug
+		 			 			addForm.submit();
+		 			} else {
+		 				document.getElementById('status_bar').innerHTML ='&nbsp';
+		 				currentAction = PassengerActions.NONE;
+		 			}
+		 		}
+			}";
+}
 
 // Forms
 
@@ -100,6 +208,12 @@ echo $this->Form->hidden('id');
 echo $this->Form->hidden('latlng');
 echo $this->Form->end();
 
+//Adds a form for the search nearby taxis operation
+echo $this->Form->create('Passenger', array('action' => 'nearbyTaxis', 'inputDefaults' => array( 'label' => false, 'div' => false)));
+echo $this->Form->hidden('id');
+echo $this->Form->hidden('distance');
+echo $this->Form->end();
+
 //Add a google maps marker for each passenger in the DB
 
 foreach ($passengers as $passenger):
@@ -113,9 +227,9 @@ foreach ($passengers as $passenger):
             'markerIcon'=>'http://mapicons.nicolasmollet.com/wp-content/uploads/mapicons/shape-default/color-ffc11f/shapecolor-color/shadow-1/border-dark/symbolstyle-white/symbolshadowstyle-dark/gradient-no/male-2.png', //Custom icon 
             'infoWindow'=>true,                    //Boolean to show an information window when you click the marker or not
             'windowText'=>'Name: ' . $passenger['Passenger']['name'],                //Default text inside the information window 
- 			'markerClickListener' => $taxiRider->getDeleteJSListener($this, 'Delete passenger '.$passengerName.'?', 'Passenger', $passengerId),
+ 			'markerClickListener' => getPassengerClickJSListener($this, $passengerName, 'Passenger', $passengerId),
  			'markerDragstartListener' => $taxiRider->getChangePosStartJSListener($this),
- 			'markerDragendListener' => $taxiRider->getChangePosEndJSListener($this, 'Change position of '.$passengerName.'?', $passengerId)));
+ 			'markerDragendListener' => $taxiRider->getChangePosEndJSListener($this, 'Change position of '.$passengerName.'?', 'Passenger', $passengerId)));
 endforeach; 
 ?>
 
