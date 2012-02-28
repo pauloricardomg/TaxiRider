@@ -6,35 +6,18 @@ class Passenger extends AppModel {
 	//Virtual field to retrieve points in postgresql
 	var $virtualFields = array('point_as_text' => 'AsText(Passenger.position)',
 							   'point_as_kml' => 'ST_AsKML(Passenger.position)');
-	
-	/**
-	 * Convert a PostGis text point in format "POINT(lat lng)" to "lat, lng" string
-	 * @param string $postgisPoint original point returned by postGis
-	 * @return string the parsed point
-	 */
-	function convertToCsv($postgisPoint){
-		preg_match("/POINT\((-?[0-9]*\.[0-9]*) (-?[0-9]*\.[0-9]*)\)/", $postgisPoint, $result);
-		unset($result[0]); //remove first element from array
-		return implode(",", $result);
-	}
-	
-	/**
-	* Convert a latitude and longitude to a PostGis point
-	* @param string $postgisPoint original point returned by postGis
-	* @return string the parsed point
-	*/
-	function convertToPostGisPoint($latlng){
-		//Remove leading parentheses
-		$latlng = str_replace(array('(',')'), '', $latlng);
-		
-		//Explode and trim latitude and longitude
-		list ($lat, $lng) = array_map('trim',explode(",",$latlng));
-		
-		$expr = "ST_GeomFromText('POINT(".$lat." ".$lng.")', 4326)";
-		$db = $this->getDataSource();
-		return $db->expression($expr);
-	}
-	
 	//var $hasMany = 'Request';
+	
+	function afterFind($results) {
+		foreach ($results as $key => $val):
+			if (isset($val['Passenger']['point_as_text'])){
+				$postgisPos = $val['Passenger']['point_as_text'];
+				$csvLatLng = $this->convertToCsv($postgisPos);
+				unset($val['Passenger']['point_as_text']);
+				$results[$key]['Passenger']['csv_latlng'] = $csvLatLng;
+			}			
+		endforeach;
+		return $results;
+	}
 }
 ?>
