@@ -2,7 +2,7 @@
 
 class PassengersController extends AppController {
 	
-	var $helpers = array ('Html','Form', 'GoogleMapV3', 'Js');
+	var $helpers = array ('Html','Form', 'GoogleMapV3', 'Js', 'TaxiRider');
 	//var $uses = array('Passenger', 'Request');
 	var $name = 'Passengers';
 	

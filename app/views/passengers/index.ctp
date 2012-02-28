@@ -29,7 +29,7 @@
                 							'latitude'=>-34.608417,    //Default latitude if the browser doesn't support localization or you don't want localization
                 							'longitude'=>-58.373161,    //Default longitude if the browser doesn't support localization or you don't want localization
                 							'localize'=>false,                //Boolean to localize your position or not
-                							'mapListener' => getAddJSListener($this), 
+                							'mapListener' => $taxiRider->getAddJSListener($this, 'Passenger name?', 'Passenger')
             	));?>
     		</td>
   			</tr>
@@ -81,106 +81,6 @@
 
 <?php
 
-// Helper methods
-
-/**
- * Gets a google map marker listener that will submit the 
- * deletion request to the server upon click on the marker
- * 
- * @param unknown_type $obj the document object
- * @param unknown_type $passengerName the name of the passenger being deleted (for confirmation)
- * @param unknown_type $passengerId the ide of the passenger in the DB
- * @return string the javascript listener for the action
- */
-function getDeleteJSListener($obj, $passengerName, $passengerId){
-	return "function(event) {
-	 		if(toDelete){
-	 			var confirmDel = ".$obj->Js->confirm('Delete passenger '.$passengerName.'?').";
-	 			if (confirmDel){
-	 						var delForm = document.forms['PassengerDeleteForm'];
-	 						delForm.elements['PassengerId'].value = ".$passengerId.";
-	 			 			delForm.submit();
-	 			} else{
-	 				document.getElementById('status_bar').innerHTML ='&nbsp';
-	 				toDelete = false;
-	 			}
-	 		} else {			
-	 			infowindow".$passengerId.".open(map,marker".$passengerId.");
-	 		}
-		}";
-}
-
-/**
-* Gets a google map listener that will submit the
-* add request to the server upon click on the map
-*
-* @param unknown_type $obj the document object
-* @return string the javascript listener for the action
-*/
-function getAddJSListener($obj){
-	return "function(event) {
-	 		if(toAdd){
-	 			var passengerName = ".$obj->Js->prompt('Passenger name?', '').";
-	 			if (passengerName != null){
-	 						var addForm = document.forms['PassengerAddForm'];
-	 						addForm.elements['PassengerName'].value = passengerName;
-	 			 			addForm.elements['PassengerLatlng'].value = event.latLng.toString();
-	 			 			//document.getElementById('status_bar').innerHTML = 'name: ' + passengerName + '. lat: ' + event.latLng.lat() + '. lon: ' + event.latLng.lng(); //debug
-	 			 			addForm.submit();
-	 			} else {
-	 				document.getElementById('status_bar').innerHTML ='&nbsp';
-	 				toAdd = false;
-	 			}
-	 		}
-		}";
-}
-
-/**
-* Gets a google map marker listener that will record the
-* initial position of the marker before being moved
-*
-* @param unknown_type $obj the document object
-* @return string the javascript listener for the action
-*/
-function getChangePosStartJSListener($obj){
-	return "function(event) {
-					initialLatLng = event.latLng;
-		}";
-}
-
-/**
- * Gets a google map marker listener that will change
- * the position of a passenger, or roll back to the
- * previous position if the user cancels the operation
- *
- * @param unknown_type $obj the document object
- * @param unknown_type $passengerName
- * @param unknown_type $passengerId
- * 
- * @return string the javascript listener for the action
- */
-function getChangePosEndJSListener($obj, $passengerName, $passengerId){
-	return "function(event) {
-		 			var confirmChangePos = ".$obj->Js->confirm('Change position of '.$passengerName.'?').";
-	 				if (confirmChangePos){
-	 						var changePosForm = document.forms['PassengerChangePositionForm'];
-	 						changePosForm.elements['PassengerId'].value = ".$passengerId.";
-	 			 			changePosForm.elements['PassengerLatlng'].value = event.latLng.toString();
-	 			 			changePosForm.submit();	 				
-					} else{
-	 					document.getElementById('status_bar').innerHTML ='&nbsp';
-						//Return initial position
-						marker".$passengerId.".setPosition(initialLatLng);
-												
-						//Disable dragging markers
-						for(var i=0; i<markers.length; i++) {
-							var value = markers[i];
-							value.setDraggable(false);
-						}
-	 				}
-		}";
-}
-
 // Forms
 
 //Adds a form for the delete operation
@@ -200,7 +100,7 @@ echo $this->Form->hidden('id');
 echo $this->Form->hidden('latlng');
 echo $this->Form->end();
 
-//Add a google maps markert for each passenger in the DB
+//Add a google maps marker for each passenger in the DB
 
 foreach ($passengers as $passenger):
 	list ($lat, $lng) = explode(",", $passenger['Passenger']['csv_latlng']);
@@ -213,9 +113,9 @@ foreach ($passengers as $passenger):
             'markerIcon'=>'http://mapicons.nicolasmollet.com/wp-content/uploads/mapicons/shape-default/color-ffc11f/shapecolor-color/shadow-1/border-dark/symbolstyle-white/symbolshadowstyle-dark/gradient-no/male-2.png', //Custom icon 
             'infoWindow'=>true,                    //Boolean to show an information window when you click the marker or not
             'windowText'=>'Name: ' . $passenger['Passenger']['name'],                //Default text inside the information window 
- 			'markerClickListener' => getDeleteJSListener($this, $passengerName, $passengerId),
- 			'markerDragstartListener' => getChangePosStartJSListener($this),
- 			'markerDragendListener' => getChangePosEndJSListener($this, $passengerName, $passengerId)));
+ 			'markerClickListener' => $taxiRider->getDeleteJSListener($this, 'Delete passenger '.$passengerName.'?', 'Passenger', $passengerId),
+ 			'markerDragstartListener' => $taxiRider->getChangePosStartJSListener($this),
+ 			'markerDragendListener' => $taxiRider->getChangePosEndJSListener($this, 'Change position of '.$passengerName.'?', $passengerId)));
 endforeach; 
 ?>
 
