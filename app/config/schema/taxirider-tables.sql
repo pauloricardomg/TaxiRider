@@ -19,6 +19,8 @@ SELECT AddGeometryColumn( 'taxis', 'position', 4326, 'POINT', 2 );
 
 ALTER TABLE taxis OWNER TO taxirider;
 
+-- // possible statuses: open=0, accepted=1, rejected=2, cancelled=3, active=4, closed=5
+
 CREATE TABLE requests (
 		id SERIAL CONSTRAINT requests_pkey PRIMARY KEY,
 		passenger_id INTEGER references passengers(id),
@@ -40,9 +42,15 @@ DROP TRIGGER IF EXISTS request_update ON requests;
 
 CREATE OR REPLACE FUNCTION close_request() RETURNS TRIGGER AS $close_request$
     BEGIN
+	-- When passenger boards taxi, and taxi picks passenger: request becomes ACTIVE
+        IF NEW.passenger_boarded = TRUE AND NEW.passenger_picked = TRUE THEN
+            NEW.status = 4;
+            NEW.modified := current_timestamp;
+        END IF;
+	-- When passenger leaves taxi, and taxi drops passenger: request becomes CLOSED
         IF NEW.passenger_boarded = FALSE AND NEW.passenger_picked = FALSE THEN
             NEW.status = 5;
-            NEW.closed := current_timestamp;
+            NEW.modified := current_timestamp;
         END IF;
         RETURN NEW;
     END;
