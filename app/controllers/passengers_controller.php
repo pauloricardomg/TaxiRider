@@ -14,18 +14,6 @@ class PassengersController extends AppController {
 		$this->set('passengers', $passengers);
 	}
 	
-	function requests(){
-		if (!empty($this->data)) {
-			$passengerRequests = $this->Request->findAllByPassengerId($this->data['Passenger']['id']);
-			$this->set('requests', $passengerRequests);
-		} else {
-			//No view - redirect to index view
-			$flashMsg = 'Failed to list requests: empty data provided';
-			$this->Session->setFlash($flashMsg);
-			$this->redirect(array('action' => 'index'));
-		}
-	}
-	
 	function delete() {
 		$flashMsg = null;
 		if(!empty($this->data)){
@@ -45,7 +33,7 @@ class PassengersController extends AppController {
 	function changePosition() {
 		$flashMsg = null;
 		if (!empty($this->data)) {
-			$this->Passenger->id = $this->data['Passenger']['id'];
+			//$this->Passenger->id = $this->data['Passenger']['id'];
 			//Retrieve selected latitude and longitude from view
 			$latlng = $this->data['Passenger']['latlng'];
 			unset($this->data['Passenger']['latlng']);
@@ -53,6 +41,7 @@ class PassengersController extends AppController {
 			//Convert to geospatial representation
 			$postGisPoint = $this->Passenger->convertToPostGisPoint($latlng);
 			$this->data['Passenger']['position'] = $postGisPoint;
+			
 			if ($this->Passenger->save($this->data, array('id', 'position'))) {
 				$flashMsg = 'Passenger position changed.';
 			}
@@ -90,13 +79,13 @@ class PassengersController extends AppController {
 	}
 	
 	function nearbyTaxis() {
-		$flashMsg = null;
 		if (!empty($this->data) && !empty($this->data['Passenger']['id'])) {
 			$passengerId = $this->data['Passenger']['id'];
-			
-			//$this->Passenger->id = $passengerId;
+
+			//For simplicity also returning current passenger (instead of placing in the session, for example)
 			$thisPassenger = $this->Passenger->read(array("id", "name", "point_as_text"), $passengerId);
 						
+			//Create complex join query - Passengers and Taxis
 			$distance = $this->data['Passenger']['distance'];
 			$options['fields'] = array("Taxi.id", "Taxi.name", "Taxi.status", "Taxi.point_as_text");
 			$options['joins'] = array(
@@ -107,19 +96,49 @@ class PassengersController extends AppController {
 						'Passenger.id = '.$this->Passenger->id
 					)
 			));
+			//Only retrieve taxis within certain range
 			$options['conditions'] = array('ST_DWithin(ST_Transform(Passenger.position,900913), ST_Transform(Taxi.position,900913), '.$distance.')'); //900913 = Google Maps projection
-			
 			$nearbyTaxis = $this->Taxi->find('all', $options);
 			
+			//Setting variables to the view
 			$this->set('thisPassenger', $thisPassenger);
 			$this->set('nearbyTaxis', $nearbyTaxis);
 		}  else{
-			$flashMsg = 'Failed to retrieve nearby taxis: empty data provided';
-			$this->Session->setFlash($flashMsg);
+			//No view - redirect to index view
+			$this->Session->setFlash('Failed to retrieve nearby taxis: empty data provided');
 			$this->redirect(array('action' => 'index'));
 		}
 	}
-		
+	
+	function requests(){
+		$thisData = $this->data;
+		$namedParams = $this->params['named'];
+	
+		//Data can be received either by POST or named parameters
+		if (!empty($thisData) || !empty($namedParams)) {
+			//For simplicity, returning current passenger, instead of placing in the session
+			$passengerId = null;
+			if(!empty($thisData)){
+				$passengerId = $thisData['Passenger']['id'];
+			} else {
+				$passengerId = $namedParams['id'];
+			}
+			$thisPassenger = $this->Passenger->read(array("id", "name", "point_as_text"), $passengerId);
+	
+			//Also, retruning all requests from that passenger
+			$passengerRequests = $this->Request->findAllByPassengerId($passengerId, array('Request.id', 'Request.status', 'Request.created',
+																								  'Request.modified', 'Request.start_pos_as_text', 
+																								  'Request.end_pos_as_text', 'Request.review', 
+																								  'Request.passenger_boarded','Taxi.name'));
+			//Setting variables to the view
+			$this->set('thisPassenger', $thisPassenger);
+			$this->set('requests', $passengerRequests);
+		} else {
+			//No view - redirect to index view
+			$this->Session->setFlash('Failed to list requests: empty data provided');
+			$this->redirect(array('action' => 'index'));
+		}
+	}	
 }
 
 ?>

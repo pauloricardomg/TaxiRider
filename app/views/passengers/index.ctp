@@ -18,6 +18,7 @@
     					<li><a href="#" onclick="deletePassenger()">Remove passenger</a></li>
     					<li><a href="#" onclick="changePosition()">Change position</a></li>
     					<li><a href="#" onclick="nearbyTaxis()">Search nearby taxis</a></li>
+    					<li><a href="#" onclick="viewRequests()">View requests</a></li>
     					</ul>
     			</ul>
     		</td>
@@ -46,6 +47,7 @@
 	    DELETE : 2,
 	    MOVE : 3,
 	    NEARBY_TAXIS : 4,
+	    REQUESTS : 5
 	}
 
 	var currentAction = PassengerActions.NONE;
@@ -66,12 +68,20 @@
 		document.getElementById('status_bar').innerHTML ='Select new passenger position:';
 	}
 
-	/* Enables add-mode.
-	*  Called when the user clicks "Add Passenger" button. 
+	/* Search nearby taxis
+	*  Called when the user clicks "Search nearby taxis" button. 
 	*/
 	function nearbyTaxis(){
 		currentAction = PassengerActions.NEARBY_TAXIS;
 		document.getElementById('status_bar').innerHTML ='Search passenger to search taxis nearby:';
+	}
+
+	/* View requests of a given passenger
+	*  Called when the user clicks "View Requests" button. 
+	*/
+	function viewRequests(){
+		currentAction = PassengerActions.REQUESTS;
+		document.getElementById('status_bar').innerHTML ='Select passengers to view requests:';
 	}
 
 	/* Enables change-position mode.
@@ -119,7 +129,8 @@
 */
 function getPassengerClickJSListener($obj, $passengerName, $modelName, $markerId){
 	$delForm = $modelName."DeleteForm";
-	$nearbyTaxis = $modelName."NearbyTaxisForm";
+	$nearbyTaxisForm = $modelName."NearbyTaxisForm";
+	$requestsForm = $modelName."RequestsForm";
 	$idElement = $modelName."Id";
 	$distanceElement = $modelName."Distance";
 	return "function(event) {
@@ -138,7 +149,7 @@ function getPassengerClickJSListener($obj, $passengerName, $modelName, $markerId
 					case PassengerActions.NEARBY_TAXIS:
 				 		var confirmReq = ".$obj->Js->confirm("Search taxis nearby ".$passengerName."?").";
 				 		if (confirmReq){
-				 					var nearbyForm = document.forms['".$nearbyTaxis."'];
+				 					var nearbyForm = document.forms['".$nearbyTaxisForm."'];
 				 					nearbyForm.elements['".$idElement."'].value = ".$markerId.";
 				 					var distance = ".$obj->Js->prompt("Search taxis within which distance? (m)", '').";
 				 					nearbyForm.elements['".$distanceElement."'].value = distance;
@@ -148,6 +159,16 @@ function getPassengerClickJSListener($obj, $passengerName, $modelName, $markerId
 				 			currentAction = PassengerActions.NONE;
 				 		}
 						break;
+					case PassengerActions.REQUESTS:
+				 		var confirmReq = ".$obj->Js->confirm("View requests from ".$passengerName."?").";
+				 		if (confirmReq){
+				 					var reqForm = document.forms['".$requestsForm."'];
+				 					reqForm.elements['".$idElement."'].value = ".$markerId.";
+				 		 			reqForm.submit();
+				 		} else{
+				 			document.getElementById('status_bar').innerHTML ='&nbsp';
+				 			currentAction = PassengerActions.NONE;
+				 		}
 					default:
   						infowindow".$markerId.".open(map,marker".$markerId.");
 				}
@@ -173,7 +194,7 @@ function getPassengerMapClickJSListener($obj, $modelName){
 	$latLngElement = $modelName."Latlng";
 
 	return "function(event) {
-		 		if(currentAction = PassengerActions.ADD){
+		 		if(currentAction == PassengerActions.ADD){
 		 			var passengerName = ".$obj->Js->prompt('Passenger name?', '').";
 		 			if (passengerName != null){
 		 						var addForm = document.forms['".$addForm."'];
@@ -212,6 +233,11 @@ echo $this->Form->end();
 echo $this->Form->create('Passenger', array('action' => 'nearbyTaxis', 'inputDefaults' => array( 'label' => false, 'div' => false)));
 echo $this->Form->hidden('id');
 echo $this->Form->hidden('distance');
+echo $this->Form->end();
+
+//Adds a form for the view requests operation
+echo $this->Form->create('Passenger', array('action' => 'requests', 'inputDefaults' => array( 'label' => false, 'div' => false)));
+echo $this->Form->hidden('id');
 echo $this->Form->end();
 
 //Add a google maps marker for each passenger in the DB
