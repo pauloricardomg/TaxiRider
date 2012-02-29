@@ -22,7 +22,7 @@ list ($passengerLat, $passengerLng) = explode(",", $thisPassenger['Passenger']['
   				<ul>
   					<li>Actions:</li>
   						<ul>
-    					<li><a href="#">Request Taxi</a></li>
+    					<li><a href="#" onclick="requestTaxi()">Request Taxi</a></li>
     					<li><?php echo $this->Html->link("Return", array('action' => 'index')); ?></li>
     					</ul>
     			</ul>
@@ -35,7 +35,7 @@ list ($passengerLat, $passengerLng) = explode(",", $thisPassenger['Passenger']['
                 							'latitude'=>$passengerLat,    //Default latitude if the browser doesn't support localization or you don't want localization
                 							'longitude'=>$passengerLng,    //Default longitude if the browser doesn't support localization or you don't want localization
                 							'localize'=>false,                //Boolean to localize your position or not
-                							//'mapListener' => $taxiRider->getAddJSListener($this, 'toAdd == true', 'Taxi name?', 'Taxi')
+                							'mapListener' => getMapClickJSListener($this, 'Request')
             	));?>
     		</td>
   			</tr>
@@ -45,12 +45,66 @@ list ($passengerLat, $passengerLng) = explode(",", $thisPassenger['Passenger']['
 <!-- JavaScript -->
 
 <script>
-//handy functions here
+
+//Possible actions
+NearbyTaxisActions = {
+	NONE : 0,
+    REQUEST : 1,
+    SELECT_DEST : 2
+}
+
+var currentAction = NearbyTaxisActions.NONE;
+
+/* Enables request taxi mode.
+*  Called when the user clicks "Request taxi" button. 
+*/
+function requestTaxi(){
+	currentAction = NearbyTaxisActions.REQUEST;
+	document.getElementById('status_bar').innerHTML ='Select taxi to request: ';
+}
+
 </script>
 
 <!-- PHP -->
 
 <?php
+
+// Helper functions
+
+
+function getTaxiClickJSListener($modelName, $markerId){
+	$add = $modelName."AddForm";
+	$taxiIdElement = $modelName."TaxiId";
+	return "function(event) {
+				if(currentAction == NearbyTaxisActions.REQUEST){
+		 			var addForm = document.forms['".$add."'];
+		 			addForm.elements['".$taxiIdElement."'].value = ".$markerId.";
+					currentAction = NearbyTaxisActions.SELECT_DEST;
+					document.getElementById('status_bar').innerHTML ='Select final destination: ';
+				}
+	}";
+}
+
+
+function getMapClickJSListener($obj, $modelName){
+	$addForm = $modelName."AddForm";
+	$endLatLngElement = $modelName."EndLatlng";
+
+	return "function(event) {
+		 		if(currentAction == NearbyTaxisActions.SELECT_DEST){
+		 				var confirmAdd = ".$obj->Js->confirm('Confirm taxi request?').";
+				 		if (confirmAdd){
+		 						var addForm = document.forms['".$addForm."'];
+		 			 			addForm.elements['".$endLatLngElement."'].value = event.latLng.toString();
+		 			 			//document.getElementById('status_bar').innerHTML = 'name: ' + passengerName + '. lat: ' + event.latLng.lat() + '. lon: ' + event.latLng.lng(); //debug
+		 			 			addForm.submit();
+		 			} else {
+		 				document.getElementById('status_bar').innerHTML ='&nbsp';
+		 				currentAction = NearbyTaxisActions.NONE;
+		 			}
+		 		}
+			}";
+}
 
 // Forms
 
@@ -58,6 +112,7 @@ list ($passengerLat, $passengerLng) = explode(",", $thisPassenger['Passenger']['
 echo $this->Form->create('Request', array('action' => 'add', 'inputDefaults' => array( 'label' => false, 'div' => false)));
 echo $this->Form->hidden('passenger_id', array('value' => $passengerId));
 echo $this->Form->hidden('taxi_id');
+echo $this->Form->hidden('end_latlng');
 echo $this->Form->end();
 
 //Add a google maps marker for the current passenger
@@ -69,9 +124,6 @@ echo $googleMapV3->addMarker(array(
             'markerIcon'=>'http://mapicons.nicolasmollet.com/wp-content/uploads/mapicons/shape-default/color-ffc11f/shapecolor-color/shadow-1/border-dark/symbolstyle-white/symbolshadowstyle-dark/gradient-no/male-2.png', //Custom icon 
             'infoWindow'=>true,                    //Boolean to show an information window when you click the marker or not
             'windowText'=>'Name: ' . $passengerName));                //Default text inside the information window 
- 			//'markerClickListener' => getPassengerClickJSListener($this, $passengerName, 'Passenger', $passengerId),
- 			//'markerDragstartListener' => $taxiRider->getChangePosStartJSListener($this),
- 			//'markerDragendListener' => $taxiRider->getChangePosEndJSListener($this, 'Change position of '.$passengerName.'?', 'Passenger', $passengerId)));
 
 //Add a google maps marker for each nearby taxi
 
@@ -88,7 +140,8 @@ foreach ($nearbyTaxis as $taxi):
             'longitude'=>$lng,        //Longitude of the marker 
             'markerIcon'=> $taxiMarker, //Custom icon 
             'infoWindow'=>true,                    //Boolean to show an information window when you click the marker or not
-            'windowText'=>'Name: ' . $taxi['Taxi']['name']));                //Default text inside the information window 
+            'windowText'=>'Name: ' . $taxi['Taxi']['name'],                //Default text inside the information window 
+			'markerClickListener' => getTaxiClickJSListener('Request',$taxiId)));
  			//'markerClickListener' => $taxiRider->getTaxiClickJSListener($this, 'Delete taxi '.$taxiName.'?', 'Taxi', $taxiId),
  			//'markerDragstartListener' => $taxiRider->getChangePosStartJSListener($this),
  			//'markerDragendListener' => $taxiRider->getChangePosEndJSListener($this, 'Change position of '.$taxiName.'?', 'Taxi', $taxiId)));

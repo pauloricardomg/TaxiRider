@@ -3,7 +3,7 @@
 class PassengersController extends AppController {
 	
 	var $helpers = array ('Html','Form', 'GoogleMapV3', 'Js', 'TaxiRider');
-	var $uses = array('Passenger', 'Taxi');
+	var $uses = array('Passenger', 'Taxi', 'Request');
 	var $name = 'Passengers';
 	
 	var $components = array('Session');
@@ -12,6 +12,18 @@ class PassengersController extends AppController {
 		$passengers = $this->Passenger->find('all', array("fields" => array("id", "name", "point_as_text")));
 		
 		$this->set('passengers', $passengers);
+	}
+	
+	function requests(){
+		if (!empty($this->data)) {
+			$passengerRequests = $this->Request->findAllByPassengerId($this->data['Passenger']['id']);
+			$this->set('requests', $passengerRequests);
+		} else {
+			//No view - redirect to index view
+			$flashMsg = 'Failed to list requests: empty data provided';
+			$this->Session->setFlash($flashMsg);
+			$this->redirect(array('action' => 'index'));
+		}
 	}
 	
 	function delete() {
@@ -65,7 +77,7 @@ class PassengersController extends AppController {
 			$this->data['Passenger']['position'] = $postGisPoint;
 
 			//Add passenger
-			if ($this->Passenger->save($this->data, array('id', 'name', 'position'))) {
+			if ($this->Passenger->save($this->data)) {
 				$flashMsg = 'Passenger successfully added.';
 			}
 		} else{
