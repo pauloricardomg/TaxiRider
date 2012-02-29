@@ -34,7 +34,7 @@ CREATE TABLE requests (
 SELECT AddGeometryColumn( 'requests', 'start_position', 4326, 'POINT', 2 );
 SELECT AddGeometryColumn( 'requests', 'end_position', 4326, 'POINT', 2 );
 
-ALTER TABLE taxis OWNER TO taxirider;
+ALTER TABLE requests OWNER TO taxirider;
 
 DROP TRIGGER IF EXISTS request_update ON requests;
 
