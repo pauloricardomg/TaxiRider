@@ -17,7 +17,7 @@
     					<li><a href="#" onclick="addTaxi()">Add taxi</a></li>
     					<li><a href="#" onclick="deleteTaxi()">Remove taxi</a></li>
     					<li><a href="#" onclick="changePosition()">Change position</a></li>
-    					<li>Search nearby taxis</li>
+    					<li><a href="#" onclick="viewRequests()">View requests</a></li>
     					</ul>
     			</ul>
     		</td>
@@ -29,7 +29,7 @@
                 							'latitude'=>-34.608417,    //Default latitude if the browser doesn't support localization or you don't want localization
                 							'longitude'=>-58.373161,    //Default longitude if the browser doesn't support localization or you don't want localization
                 							'localize'=>false,                //Boolean to localize your position or not
-                							'mapListener' => $taxiRider->getAddJSListener($this, 'Taxi name?', 'Taxi')
+                							'mapListener' => getTaxiMapClickListener($this, 'Taxi name?', 'Taxi')
             	));?>
     		</td>
   			</tr>
@@ -39,18 +39,31 @@
 <!-- JavaScript -->
 
 <script>
-	//delete flag
-	var toDelete = false;
-	//add flag
-	var toAdd = false;
-	//change position flag
-	var changePos = false;
 
+	//Possible actions
+	TaxiActions = {
+			NONE : 0,
+		    ADD : 1,
+		    DELETE : 2,
+		    MOVE : 3,
+		    REQUESTS : 4
+	}
+
+	var currentAction = TaxiActions.NONE;
+	
+	/* View requests of a given taxi
+	*  Called when the user clicks "View Requests" button. 
+	*/
+	function viewRequests(){
+		currentAction = TaxiActions.REQUESTS;
+		document.getElementById('status_bar').innerHTML ='Select taxi to view requests:';
+	}
+	
 	/* Enables delete-mode.
 	*  Called when the user clicks "Remove Taxi" button. 
 	*/
 	function deleteTaxi(){
-		toDelete = true;
+		currentAction = TaxiActions.DELETE;
 		document.getElementById('status_bar').innerHTML ='Select taxi:';
 	}
 
@@ -58,7 +71,7 @@
 	*  Called when the user clicks "Add Taxi" button. 
 	*/
 	function addTaxi(){
-		toAdd = true;
+		currentAction = TaxiActions.ADD;
 		document.getElementById('status_bar').innerHTML ='Select new taxi position:';
 	}
 
@@ -80,6 +93,98 @@
 <!-- PHP -->
 
 <?php
+
+// Helpers
+
+/**
+* Gets a google map click listener that will submit the
+* operation (add or list requests) to the server upon click on the map
+*
+* Assumptions:
+*
+* - This listener needs an external "currentAction" variable, which
+* is an enumeration (TaxiActions) that indicates what is the active
+* action currently.
+* 
+* - Also equires JS helper being specified in the controller ($obj)
+*
+* @param unknown_type $obj the document object
+* @param unknown_type $confirmMsg a message requesting the name of the entity to add
+* @param unknown_type $modelName the name of the model being added
+* @return string the javascript listener for the add action
+*/
+function getTaxiMapClickListener($obj, $confirmMsg, $modelName){
+	$addForm = $modelName."AddForm";
+	$nameElement = $modelName."Name";
+	$latLngElement = $modelName."Latlng";
+
+	return "function(event) {
+		 		if(currentAction == TaxiActions.ADD){
+		 			var taxiName = ".$obj->Js->prompt($confirmMsg, '').";
+		 			if (taxiName != null){
+		 						var addForm = document.forms['".$addForm."'];
+		 						addForm.elements['".$nameElement."'].value = taxiName;
+		 			 			addForm.elements['".$latLngElement."'].value = event.latLng.toString();
+		 			 			//document.getElementById('status_bar').innerHTML = 'name: ' + taxiName + '. lat: ' + event.latLng.lat() + '. lon: ' + event.latLng.lng(); //debug
+		 			 			addForm.submit();
+		 			} else {
+		 				document.getElementById('status_bar').innerHTML ='&nbsp';
+		 				currentAction = TaxiActions.NONE;
+		 			}
+		 		}
+			}";
+}
+
+/**
+*
+* Gets a google map marker click listener that will submit the
+* (delete) operation to the server upon click on the marker
+*
+* Assumptions:
+*
+* - This listener needs an external "currentAction" variable, which
+* is an enumeration (TaxiActions) that indicates what is the active
+* action currently.
+* 
+* - Requires JS helper being specified in the controller
+*
+* - Assumes marker id is the id of the object to be removed in the DB
+*
+* @param unknown_type $obj the document object
+* @param string $confirmMsg the delete confirmation message to be shown on a popup
+* @param unknown_type $modelName the name of the model being deleted
+* @param string $markerId the identifier of the marker to which this listener will
+* 						be associated
+* @return the javascript listener for the action
+*/
+function getTaxiMarkerClickJSListener($obj, $taxiName, $modelName, $markerId){
+	$delForm = $modelName."DeleteForm";
+	$idElement = $modelName."Id";
+	$requestsForm = $modelName."RequestsForm";
+	return "function(event) {
+		 		if(currentAction == TaxiActions.DELETE){
+		 			var confirmDel = ".$obj->Js->confirm('Delete taxi '.$taxiName.'?').";
+		 			if (confirmDel){
+		 						var delForm = document.forms['".$delForm."'];
+		 						delForm.elements['".$idElement."'].value = ".$markerId.";
+		 			 			delForm.submit();
+		 			} else {
+		 				document.getElementById('status_bar').innerHTML ='&nbsp';
+		 				toDelete = false;
+		 			}
+		 		} else if (currentAction == TaxiActions.REQUESTS){
+				 		var confirmReq = ".$obj->Js->confirm("View requests from ".$taxiName."?").";
+				 		if (confirmReq){
+				 			window.location = '".$obj->Html->url(array( "action" => "requests", "id" => $markerId))."';
+				 		} else{
+				 			document.getElementById('status_bar').innerHTML ='&nbsp';
+				 			currentAction = PassengerActions.NONE;
+				 		}
+		 		} else {
+		 			infowindow".$markerId.".open(map,marker".$markerId.");
+		 		}
+			}";
+}
 
 // Forms
 
@@ -116,7 +221,7 @@ foreach ($taxis as $taxi):
             'markerIcon'=> $taxiMarker, //Custom icon 
             'infoWindow'=>true,                    //Boolean to show an information window when you click the marker or not
             'windowText'=>'Name: ' . $taxi['Taxi']['name'],                //Default text inside the information window 
- 			'markerClickListener' => $taxiRider->getTaxiClickJSListener($this, 'Delete taxi '.$taxiName.'?', 'Taxi', $taxiId),
+ 			'markerClickListener' => getTaxiMarkerClickJSListener($this, $taxiName, 'Taxi', $taxiId),
  			'markerDragstartListener' => $taxiRider->getChangePosStartJSListener($this),
  			'markerDragendListener' => $taxiRider->getChangePosEndJSListener($this, 'Change position of '.$taxiName.'?', 'Taxi', $taxiId)));
 endforeach; 
