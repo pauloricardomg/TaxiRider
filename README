@@ -21,11 +21,12 @@
 
 4. With user 'taxirider', execute SQL script '/app/config/schema/taxirider-tables.sql' - On the linux terminal, execute: "psql -f taxirider-tables.sql taxirider"
 
-5. Copy the 'app' folder to your CakePHP 1.3 directory - if your cakephp is configure, the application should be app and running!
+5. Copy the 'app' folder to your CakePHP 1.3 directory - if your cakephp is configured, the application should be app and running!
 
 *** How to access the App:
 
 - Passengers view: <server_address>/taxirider/passengers/ (eg. http://localhost/taxirider/passengers/)
+
 - Taxi view: <server_address>/taxirider/taxis/ (eg. http://localhost/taxirider/passengers/)
 
 *** Use cases
