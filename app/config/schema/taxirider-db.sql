@@ -4,6 +4,7 @@
 
 CREATE DATABASE taxirider
   WITH OWNER = taxirider
+       TEMPLATE = postgistemplate
        ENCODING = 'UTF8'
        TABLESPACE = pg_default
        LC_COLLATE = 'en_US.UTF-8'

@@ -2,6 +2,11 @@
 DROP TABLE IF EXISTS passengers;
 DROP TABLE IF EXISTS taxis;
 
+-- Alter permissions of postgis tables
+
+ALTER TABLE spatial_ref_sys OWNER TO taxirider;
+ALTER TABLE geometry_columns OWNER TO taxirider;
+
 -- WGS84 (google maps projection) = 4326.
 
 CREATE TABLE passengers (
