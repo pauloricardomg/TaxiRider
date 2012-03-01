@@ -248,7 +248,7 @@ foreach ($passengers as $passenger):
             'id'=>$passengerId,                                //Id of the marker 
             'latitude'=>$lat,        //Latitude of the marker 
             'longitude'=>$lng,        //Longitude of the marker 
-            'markerIcon'=>'http://mapicons.nicolasmollet.com/wp-content/uploads/mapicons/shape-default/color-ffc11f/shapecolor-color/shadow-1/border-dark/symbolstyle-white/symbolshadowstyle-dark/gradient-no/male-2.png', //Custom icon 
+            'markerIcon'=>'img/passenger.png', //Custom icon 
             'infoWindow'=>true,                    //Boolean to show an information window when you click the marker or not
             'windowText'=>'Name: ' . $passenger['Passenger']['name'],                //Default text inside the information window 
  			'markerClickListener' => getPassengerClickJSListener($this, $passengerName, 'Passenger', $passengerId),

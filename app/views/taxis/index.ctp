@@ -212,8 +212,8 @@ foreach ($taxis as $taxi):
 	$taxiId = $taxi['Taxi']['id'];
 	$taxiName = $taxi['Taxi']['name'];
 	$taxiStatus = $taxi['Taxi']['status'];
-	$taxiMarker = ($taxiStatus? "http://mapicons.nicolasmollet.com/wp-content/uploads/mapicons/shape-default/color-0ef256/shapecolor-color/shadow-1/border-dark/symbolstyle-contrast/symbolshadowstyle-dark/gradient-iphone/taxi.png" : 
-								"http://mapicons.nicolasmollet.com/wp-content/uploads/mapicons/shape-default/color-f00e0e/shapecolor-color/shadow-1/border-dark/symbolstyle-white/symbolshadowstyle-dark/gradient-no/taxi.png");
+	$taxiMarker = ($taxiStatus? "img/taxi-green.png" : 
+								"img/taxi-red.png");
 	echo $googleMapV3->addMarker(array(
             'id'=>$taxiId,                                //Id of the marker 
             'latitude'=>$lat,        //Latitude of the marker 
