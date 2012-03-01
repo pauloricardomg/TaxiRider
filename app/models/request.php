@@ -21,6 +21,9 @@ class Request extends AppModel {
 				$csvStart = $this->convertToCsv($postgisPos);
 				unset($results[$key]['Request']['start_pos_as_text']);
 				$results[$key]['Request']['csv_start'] = $csvStart;
+				
+				//Reverse geocoding done for every request retrieved - optimize that later (caching, options, etc)
+				$results[$key]['Request']['addr_start'] = $this->get_address($csvStart);
 			}
 		
 			if (isset($val['Request']['end_pos_as_text'])){
@@ -28,9 +31,20 @@ class Request extends AppModel {
 				$csvEnd = $this->convertToCsv($postgisPos);
 				unset($results[$key]['Request']['end_pos_as_text']);
 				$results[$key]['Request']['csv_end'] = $csvEnd;
+				
+				//Reverse geocoding done for every request retrieved - optimize that later (caching, options, etc)
+				$results[$key]['Request']['addr_end'] = $this->get_address($csvEnd);
 			}
 		endforeach;
 		return $results;
+	}
+	
+	function get_address($csvPos){
+		//Does a reverse geocoding on google maps api
+		$baseUrl = "http://maps.googleapis.com/maps/api/geocode/json?latlng=".$csvPos."&sensor=false";
+		$jsonObj = file_get_contents($baseUrl);
+		$geocodedAddress = json_decode($jsonObj);
+		return $geocodedAddress->{'results'}[0]->{'formatted_address'};
 	}
 }
 ?>

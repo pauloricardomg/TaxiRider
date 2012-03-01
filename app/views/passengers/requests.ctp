@@ -91,8 +91,8 @@ foreach ($requests as $request):
 	$reqStatus = $codetoStatusStr[$reqStatusCode];
 	$reqCreationDate = $request['Request']['created'];
 	$reqModDate = $request['Request']['modified'];
-	$reqStart = $request['Request']['csv_start'];
-	$reqEnd = $request['Request']['csv_end'];
+	$reqStart = $request['Request']['addr_start'];
+	$reqEnd = $request['Request']['addr_end'];
 	$reqReview = $request['Request']['review'];
 	$passengerBoarded = $request['Request']['passenger_boarded'];
 	$actions = generateActions($this, $reqStatusCode, $reqId, $passengerBoarded, $reqReview);
