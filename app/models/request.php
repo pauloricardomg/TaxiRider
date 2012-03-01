@@ -10,8 +10,6 @@ class Request extends AppModel {
 	//So it will return the taxi entry when retrieving the request entry
 	var $belongsTo = array('Taxi', 'Passenger');
 	
-	
-	
 	/**
 	 * Converts begin and end positions from postgis representations to CSV
 	 * @param unknown_type $results the returned results on find
@@ -34,8 +32,5 @@ class Request extends AppModel {
 		endforeach;
 		return $results;
 	}
-	
-	//var $belongsTo = array('Requester' => 'User', 'Requested' => 'Taxi');
-
 }
 ?>

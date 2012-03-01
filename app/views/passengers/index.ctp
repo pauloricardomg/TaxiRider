@@ -45,9 +45,8 @@
 		NONE : 0,
 	    ADD : 1,
 	    DELETE : 2,
-	    MOVE : 3,
-	    NEARBY_TAXIS : 4,
-	    REQUESTS : 5
+	    NEARBY_TAXIS : 3,
+	    REQUESTS : 4
 	}
 
 	var currentAction = PassengerActions.NONE;
@@ -73,7 +72,7 @@
 	*/
 	function nearbyTaxis(){
 		currentAction = PassengerActions.NEARBY_TAXIS;
-		document.getElementById('status_bar').innerHTML ='Search passenger to search taxis nearby:';
+		document.getElementById('status_bar').innerHTML ='Select passenger to search taxis nearby:';
 	}
 
 	/* View requests of a given passenger
@@ -81,14 +80,13 @@
 	*/
 	function viewRequests(){
 		currentAction = PassengerActions.REQUESTS;
-		document.getElementById('status_bar').innerHTML ='Select passengers to view requests:';
+		document.getElementById('status_bar').innerHTML ='Select passenger to view requests:';
 	}
 
 	/* Enables change-position mode.
 	*  Called when the user clicks "Change Position" button. 
 	*/
 	function changePosition(){
-		currentAction = PassengerActions.MOVE;
 		document.getElementById('status_bar').innerHTML ='Drag and drop passenger to new position: ';
 
 		//Enable dragging markers
@@ -108,9 +106,10 @@
 /**
 *
 * Gets a google map marker click listener that will either delete the
-* selected passenger or search the nearby taxis, according to the active action
+* selected passenger, search the nearby taxis or list requests 
+* according to the active action
 *
-* Constraints:
+* Assumptions:
 *
 * - This listener needs an external "currentAction" variable, which
 * is an enumeration (PassengerActions) that indicates what is the active
@@ -162,9 +161,7 @@ function getPassengerClickJSListener($obj, $passengerName, $modelName, $markerId
 					case PassengerActions.REQUESTS:
 				 		var confirmReq = ".$obj->Js->confirm("View requests from ".$passengerName."?").";
 				 		if (confirmReq){
-				 					var reqForm = document.forms['".$requestsForm."'];
-				 					reqForm.elements['".$idElement."'].value = ".$markerId.";
-				 		 			reqForm.submit();
+				 			window.location = '".$obj->Html->url(array( "action" => "requests", "id" => $markerId))."';
 				 		} else{
 				 			document.getElementById('status_bar').innerHTML ='&nbsp';
 				 			currentAction = PassengerActions.NONE;
@@ -179,7 +176,13 @@ function getPassengerClickJSListener($obj, $passengerName, $modelName, $markerId
 /**
 * Gets a google map click listener that will submit the
 * add request to the server upon click on the map
-*
+* 
+* Assumptions:
+* 
+* - This listener needs an external "currentAction" variable, which
+* is an enumeration (PassengerActions) that indicates what is the active
+* action currently.
+* 
 * - Requires JS helper being specified in the controller ($obj)
 *
 * @param unknown_type $obj the document object
@@ -233,11 +236,6 @@ echo $this->Form->end();
 echo $this->Form->create('Passenger', array('action' => 'nearbyTaxis', 'inputDefaults' => array( 'label' => false, 'div' => false)));
 echo $this->Form->hidden('id');
 echo $this->Form->hidden('distance');
-echo $this->Form->end();
-
-//Adds a form for the view requests operation
-echo $this->Form->create('Passenger', array('action' => 'requests', 'inputDefaults' => array( 'label' => false, 'div' => false)));
-echo $this->Form->hidden('id');
 echo $this->Form->end();
 
 //Add a google maps marker for each passenger in the DB

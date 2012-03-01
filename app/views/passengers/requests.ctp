@@ -1,4 +1,4 @@
-<!-- File: /app/views/passengers/index.ctp -->
+<!-- File: /app/views/passengers/requests.ctp -->
 
 <!-- HTML + PHP -->
 
@@ -16,12 +16,11 @@ class RequestStatus
 	// etc.	
 }
 
-static $codetoStatusStr = array(0 => 'Open', 1 => 'Accepted', 2 => 'Rejected', 3 => 'Cancelled', 4 => 'Active', 5 => 'Closed');
+static $codetoStatusStr = array(0 => 'Open (Waiting for taxi response)', 1 => 'Accepted (Waiting taxi to arrive)', 2 => 'Rejected', 3 => 'Cancelled', 4 => 'Active (Boarded Taxi)', 5 => 'Closed');
 
 //Passenger attributes
 $passengerId = $thisPassenger['Passenger']['id'];
 $passengerName = $thisPassenger['Passenger']['name'];
-list ($passengerLat, $passengerLng) = explode(",", $thisPassenger['Passenger']['csv_latlng']);
 
 ?>
 
@@ -32,7 +31,13 @@ list ($passengerLat, $passengerLng) = explode(",", $thisPassenger['Passenger']['
 <table class="sample">
 
 <tr>
-<td id="status_bar" style="color: red; font-weight: bold; text-align: center" colspan="10"><?php echo $this->Session->flash(); ?>&nbsp</td>
+<td id="status_bar" style="color: red; font-weight: bold; text-align: center" colspan="10">
+<?php 
+$flashmsg = $this->Session->flash();
+echo (empty($flashmsg)) ? 'In order to see status updates, please reload page.' : $flashmsg; 
+?>
+&nbsp
+</td>
 </tr>
 
 <tr>
@@ -51,20 +56,20 @@ list ($passengerLat, $passengerLng) = explode(",", $thisPassenger['Passenger']['
 function generateActions($obj, $reqStatusCode, $reqId, $passengerBoarded, $review){
 	switch ($reqStatusCode) {
 		case RequestStatus::Open:
-			return $obj->Html->link("Cancel", array( "controller" => "requests", "action" => "update", "id" => $reqId, "status" => RequestStatus::Cancelled));
+			return $obj->Html->link("Cancel", array( "controller" => "requests", "action" => "update", "id" => $reqId, "status" => RequestStatus::Cancelled, 'model' => 'passengers'));
 			break;
 		case RequestStatus::Accepted:
 			if(!$passengerBoarded){
-				return $obj->Html->link("Enter Taxi", array( "controller" => "requests", "action" => "update",    "id" => $reqId, "passenger_boarded" => "true"));
+				return $obj->Html->link("Enter Taxi", array( "controller" => "requests", "action" => "update",    "id" => $reqId, "passenger_boarded" => "true", 'model' => 'passengers'));
 			} else {
-				return 'Waiting for driver.';
+				return 'Waiting taxi to arrive.';
 			}	
 			break;
 		case RequestStatus::Active:
 			if($passengerBoarded){
-				return $obj->Html->link("Leave Taxi", array( "controller" => "requests", "action" => "update",    "id" => $reqId, "passenger_boarded" => "false"));
+				return $obj->Html->link("Leave Taxi", array( "controller" => "requests", "action" => "update",    "id" => $reqId, "passenger_boarded" => "false", 'model' => 'passengers'));
 			} else {
-				return 'Waiting for driver.';
+				return 'Waiting taxi to stop.';
 			}
 			break;
 		case RequestStatus::Closed:
