@@ -17,7 +17,7 @@
 2. Create user 'taxirider' on postgresql 9.1, with password 'taxirider' (if you want to use another user, you will have to change the configuration on /app/config/database.php and update the SQL scripts)
 
 3. Create a database named 'taxirider' based on the postgis template, and assign the owner to the user 'taxirider'.
-   3.1 Alternatively, you can simply run the SQL script: '/app/config/schema/taxirider-db.sql' with postgres super-user - this script assumes the postgis template database is named 'postgistemplate', change it if necessary. To execute on the postgres linux admin terminal: "psql -f taxirider-db.sql".
+   3.1 Alternatively, you can simply run the SQL script: '/app/config/schema/taxirider-db.sql' with postgres super-user - this script assumes the postgis template database is named 'postgistemplate', change it if necessary. To execute, run on the postgres linux admin terminal: "psql -f taxirider-db.sql".
 
 4. With user 'taxirider', execute SQL script '/app/config/schema/taxirider-tables.sql' - On the linux terminal, execute: "psql -f taxirider-tables.sql taxirider"
 
