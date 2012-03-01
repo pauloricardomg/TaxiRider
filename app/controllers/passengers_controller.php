@@ -9,7 +9,7 @@ class PassengersController extends AppController {
 	var $components = array('Session');
 	
 	function index() {
-		$passengers = $this->Passenger->find('all', array("fields" => array("id", "name", "point_as_text")));
+		$passengers = $this->Passenger->find('all', array("fields" => array("id", "name", "position_as_text")));
 		
 		$this->set('passengers', $passengers);
 	}
@@ -83,11 +83,11 @@ class PassengersController extends AppController {
 			$passengerId = $this->data['Passenger']['id'];
 
 			//For simplicity also returning current passenger (instead of placing in the session, for example)
-			$thisPassenger = $this->Passenger->read(array("id", "name", "point_as_text"), $passengerId);
+			$thisPassenger = $this->Passenger->read(array("id", "name", "position_as_text"), $passengerId);
 						
 			//Create complex join query - Passengers and Taxis
 			$distance = $this->data['Passenger']['distance'];
-			$options['fields'] = array("Taxi.id", "Taxi.name", "Taxi.status", "Taxi.point_as_text");
+			$options['fields'] = array("Taxi.id", "Taxi.name", "Taxi.status", "Taxi.position_as_text");
 			$options['joins'] = array(
 			array('table' => 'passengers',
 			        'alias' => 'Passenger',
@@ -123,13 +123,13 @@ class PassengersController extends AppController {
 			} else {
 				$passengerId = $namedParams['id'];
 			}
-			$thisPassenger = $this->Passenger->read(array("id", "name", "point_as_text"), $passengerId);
+			$thisPassenger = $this->Passenger->read(array("id", "name", "position_as_text"), $passengerId);
 	
 			//Also, retruning all requests from that passenger
 			$passengerRequests = $this->Request->findAllByPassengerId($passengerId, array('Request.id', 'Request.status', 'Request.created',
 																								  'Request.modified', 'Request.start_pos_as_text', 
 																								  'Request.end_pos_as_text', 'Request.review', 
-																								  'Request.passenger_boarded','Taxi.name'));
+																								  'Request.passenger_boarded','Taxi.name'), 'Request.id');
 			//Setting variables to the view
 			$this->set('thisPassenger', $thisPassenger);
 			$this->set('requests', $passengerRequests);
